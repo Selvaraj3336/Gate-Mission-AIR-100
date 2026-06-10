@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Analytics | GATE Mission{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+
+<!-- AIR Prediction -->
+<div class="card glow" style="padding:18px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+    <span class="mi" style="font-size:22px;color:var(--primary-soft);font-variation-settings:'FILL' 1">military_tech</span>
+    <div style="font-size:17px;font-weight:700">AIR Prediction Engine</div>
+    <span class="badge {% if air.on_track %}badge-green{% else %}badge-red{% endif %}" style="margin-left:auto">{{ '✓ On Track' if air.on_track else '✗ Off Track' }}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px">
+    <div style="background:var(--surface-2);border-radius:12px;padding:14px;text-align:center">
+      <div style="font-size:34px;font-weight:300;color:{% if air.on_track %}var(--green){% else %}var(--red){% endif %}">{{ air.probability }}%</div>
+      <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em">Probability</div>
+    </div>
+    <div style="background:var(--surface-2);border-radius:12px;padding:14px;text-align:center">
+      <div style="font-size:34px;font-weight:300;color:var(--primary-soft)">~{{ air.estimated_air }}</div>
+      <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em">Est. AIR</div>
+    </div>
+  </div>
+  <div class="prog-track" style="height:8px">
+    <div class="prog-fill" style="width:{{ air.probability }}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--green))"></div>
+  </div>
+</div>
+
+<!-- Stats row -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--primary-soft)">{{ total_hours }}</div>
+    <div style="font-size:11px;color:var(--text-2)">Total Hours</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--green)">{{ session_count }}</div>
+    <div style="font-size:11px;color:var(--text-2)">Sessions</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--yellow)">{{ rev_pct }}%</div>
+    <div style="font-size:11px;color:var(--text-2)">Rev Done</div>
+  </div>
+</div>
+
+<!-- Daily hours chart -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--primary-soft)">show_chart</span>
+    Daily Study Hours (14 days)
+  </div>
+  <canvas id="dailyChart" height="160"></canvas>
+</div>
+
+<!-- Subject distribution -->
+{% if subject_hours %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--yellow)">donut_large</span>
+    Subject Distribution
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% set max_hrs = subject_hours.values()|max if subject_hours else 1 %}
+    {% for subj, hrs in subject_hours.items()|sort(attribute=1, reverse=True) %}
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span style="color:var(--text-2)">{{ subj }}</span>
+        <span style="font-weight:600;color:var(--primary-soft)">{{ hrs }}h</span>
+      </div>
+      <div class="prog-track" style="height:6px">
+        <div class="prog-fill" style="width:{{ (hrs / max_hrs * 100)|round|int }}%;height:100%;background:var(--primary)"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Mock test trend -->
+{% if mocks %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--blue)">trending_up</span>
+    Mock Test Trend
+  </div>
+  <canvas id="mockChart" height="140"></canvas>
+</div>
+{% endif %}
+
+<!-- PYQ Progress -->
+{% if pyq_data %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--green)">library_books</span>
+    PYQ Progress
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% for p in pyq_data %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface-2);border-radius:10px">
+      <div>
+        <div style="font-size:13px;font-weight:500">{{ p['subject'] }}</div>
+        <div style="font-size:12px;color:var(--text-2)">{{ p['solved'] }} solved</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:15px;font-weight:700;color:{% if p.accuracy >= 70 %}var(--green){% elif p.accuracy >= 50 %}var(--yellow){% else %}var(--red){% endif %}">{{ p.accuracy }}%</div>
+        <div style="font-size:11px;color:var(--text-2)">accuracy</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Error notebook quick add -->
+<div class="card" style="padding:18px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--red);font-variation-settings:'FILL' 1">bug_report</span>
+    Add to Error Notebook
+  </div>
+  <form method="POST" action="/analytics/error/add" style="display:flex;flex-direction:column;gap:10px">
+    <select name="subject" class="inp">
+      {% for s in subjects %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="topic" class="inp" placeholder="Topic">
+    <textarea name="question" class="inp" placeholder="Question / Problem..." rows="2" required style="resize:none"></textarea>
+    <input type="text" name="mistake" class="inp" placeholder="What went wrong?">
+    <input type="text" name="correction" class="inp" placeholder="Correct approach">
+    <button type="submit" class="btn-primary" style="padding:11px">
+      <span class="mi" style="font-size:16px">add</span>
+      Add Entry
+    </button>
+  </form>
+</div>
+
+{% if errors %}
+<div style="margin-top:16px">
+  <div class="sec-h" style="margin-bottom:10px">
+    <span class="mi" style="color:var(--text-2)">format_list_bulleted</span>
+    Error Notebook
+  </div>
+  {% for e in errors %}
+  <div class="card-2" style="padding:12px 14px;margin-bottom:8px">
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <span class="badge badge-red" style="flex-shrink:0">{{ e['subject'][:6] }}</span>
+      <div>
+        <div style="font-size:13px;font-weight:500">{{ e['question'][:80] }}{% if e['question']|length > 80 %}…{% endif %}</div>
+        {% if e['correction'] %}
+        <div style="font-size:12px;color:var(--green);margin-top:3px">✓ {{ e['correction'][:60] }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Daily chart
+const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+new Chart(dailyCtx, {
+  type: 'bar',
+  data: {
+    labels: {{ daily_labels|tojson }},
+    datasets: [{
+      data: {{ daily_hours|tojson }},
+      backgroundColor: 'rgba(124,111,247,0.5)',
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y}h` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9896a8', font: { size: 9 }, maxRotation: 45 } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9896a8', font: { size: 10 }, callback: v => v+'h' }, beginAtZero: true }
+    }
+  }
+});
+
+{% if mocks %}
+const mockCtx = document.getElementById('mockChart').getContext('2d');
+new Chart(mockCtx, {
+  type: 'line',
+  data: {
+    labels: {{ mock_labels|tojson }},
+    datasets: [{
+      data: {{ mock_scores|tojson }},
+      borderColor: '#60a5fa',
+      backgroundColor: 'rgba(96,165,250,0.1)',
+      pointBackgroundColor: '#60a5fa',
+      tension: 0.4,
+      fill: true,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} marks` } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9896a8', font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9896a8', font: { size: 10 } }, beginAtZero: true }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

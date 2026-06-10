@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | GATE Mission AIR-100{% endblock %}
+{% block page_title %}{{ user['name'].split()[0] }}'s Mission{% endblock %}
+
+{% block content %}
+<div style="display:flex;flex-direction:column;gap:16px">
+
+  <!-- AIR STATUS HERO CARD -->
+  <div class="card glow" style="padding:20px;position:relative;overflow:hidden">
+    <!-- Background orb -->
+    <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(124,111,247,0.08) 0%,transparent 70%);pointer-events:none"></div>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-2);margin-bottom:4px">Mission Status</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text)">Target: AIR &lt; 100</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);border-radius:100px;padding:5px 12px">
+        <span class="mi" style="font-size:16px;color:var(--yellow);font-variation-settings:'FILL' 1">local_fire_department</span>
+        <span style="font-size:12px;font-weight:700;color:var(--yellow)">{{ streak }}d Streak</span>
+      </div>
+    </div>
+
+    <!-- Track status -->
+    <div style="margin-bottom:16px">
+      <span class="badge {% if air_data.on_track %}badge-green{% else %}badge-red{% endif %}">
+        <span class="mi" style="font-size:12px">{{ 'check_circle' if air_data.on_track else 'cancel' }}</span>
+        {{ 'On Track' if air_data.on_track else 'Off Track' }}
+      </span>
+      <span style="font-size:13px;color:var(--text-2);margin-left:8px">Est. AIR ~{{ air_data.estimated_air }} · {{ air_data.probability }}%</span>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface-2);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:var(--primary-soft)">{{ days_left }}</div>
+        <div style="font-size:11px;color:var(--text-2)">Days Left</div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:var(--green)">{{ today_hours }}h</div>
+        <div style="font-size:11px;color:var(--text-2)">Today</div>
+      </div>
+      <div style="background:var(--surface-2);border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:var(--yellow)">{{ weekly_hours_total }}h</div>
+        <div style="font-size:11px;color:var(--text-2)">This Week</div>
+      </div>
+    </div>
+
+    <!-- Goal progress -->
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:6px">
+        <span>Daily Goal Progress</span>
+        <span style="color:var(--primary-soft)">{{ today_hours }}h / {{ goal_hours }}h ({{ goal_pct }}%)</span>
+      </div>
+      <div class="prog-track" style="height:8px">
+        <div class="prog-fill" style="width:{{ goal_pct }}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-soft))"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <a href="/study" class="card card-press" style="padding:18px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:var(--primary-dim2);border-color:var(--primary)">
+      <span class="mi" style="font-size:30px;color:var(--primary-soft);font-variation-settings:'FILL' 1">play_circle</span>
+      <div style="font-size:15px;font-weight:600;color:var(--text)">Start Study</div>
+      <div style="font-size:12px;color:var(--primary-soft)">Deep Focus Mode</div>
+    </a>
+    <a href="/revision" class="card card-press" style="padding:18px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+      <span class="mi" style="font-size:30px;color:var(--yellow);font-variation-settings:'FILL' 1">history_edu</span>
+      <div style="font-size:15px;font-weight:600;color:var(--text)">Revision</div>
+      <div style="font-size:12px;color:var(--text-2)">
+        {% set total_due = (due_today|length + overdue|length) %}
+        {% if total_due > 0 %}
+        <span style="color:var(--yellow)">{{ total_due }} due now</span>
+        {% else %}All clear ✓{% endif %}
+      </div>
+    </a>
+    <a href="/mock" class="card card-press" style="padding:18px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+      <span class="mi" style="font-size:30px;color:var(--blue);font-variation-settings:'FILL' 1">quiz</span>
+      <div style="font-size:15px;font-weight:600;color:var(--text)">Mock Tests</div>
+      <div style="font-size:12px;color:var(--text-2)">{{ recent_mocks|length }} recorded</div>
+    </a>
+    <a href="/pyq" class="card card-press" style="padding:18px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+      <span class="mi" style="font-size:30px;color:var(--green);font-variation-settings:'FILL' 1">library_books</span>
+      <div style="font-size:15px;font-weight:600;color:var(--text)">PYQ Tracker</div>
+      <div style="font-size:12px;color:var(--text-2)">Past year Qs</div>
+    </a>
+  </div>
+
+  <!-- REVISION ALERTS -->
+  {% if overdue or due_today %}
+  <div class="card" style="padding:18px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--red);font-size:20px;font-variation-settings:'FILL' 1">notifications_active</span>
+      Revision Alerts
+      {% if overdue %}
+      <span class="badge badge-red" style="margin-left:auto">{{ overdue|length }} overdue</span>
+      {% endif %}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      {% for rev in overdue[:3] %}
+      <div style="padding:12px;background:var(--red-dim);border-radius:10px;border-left:3px solid var(--red)">
+        <div style="font-weight:600;font-size:14px">{{ rev['topic'] }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">{{ rev['subject'] }} · <span style="color:var(--red)">Overdue</span></div>
+      </div>
+      {% endfor %}
+      {% for rev in due_today[:3] %}
+      <div style="padding:12px;background:var(--yellow-dim);border-radius:10px;border-left:3px solid var(--yellow)">
+        <div style="font-weight:600;font-size:14px">{{ rev['topic'] }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">{{ rev['subject'] }} · <span style="color:var(--yellow)">Due today</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    <a href="/revision" style="display:block;text-align:center;margin-top:12px;color:var(--primary-soft);font-size:13px;font-weight:500;text-decoration:none">View all revisions →</a>
+  </div>
+  {% endif %}
+
+  <!-- WEEKLY SPARKLINE -->
+  <div class="card" style="padding:18px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--primary-soft);font-size:20px">show_chart</span>
+      Weekly Study Hours
+    </div>
+    <canvas id="sparkChart" height="100"></canvas>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  {% if notifications %}
+  <div class="card" style="padding:18px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--blue);font-size:20px;font-variation-settings:'FILL' 1">notifications</span>
+      Notifications
+      <span class="badge badge-blue" style="margin-left:auto">{{ notifications|length }} new</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      {% for n in notifications[:4] %}
+      <div style="padding:10px 12px;background:var(--surface-2);border-radius:10px;font-size:13px;color:var(--text-2)">
+        {{ n['message'] }}
+      </div>
+      {% endfor %}
+    </div>
+    <a href="/profile" style="display:block;text-align:center;margin-top:12px;color:var(--primary-soft);font-size:13px;font-weight:500;text-decoration:none">View all →</a>
+  </div>
+  {% endif %}
+
+  <!-- RECENT MOCKS -->
+  {% if recent_mocks %}
+  <div class="card" style="padding:18px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--blue);font-size:20px;font-variation-settings:'FILL' 1">quiz</span>
+      Recent Mock Tests
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      {% for m in recent_mocks %}
+      {% set pct = (m['marks'] / (m['max_marks'] or 100) * 100)|round(1) %}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface-2);border-radius:10px">
+        <div>
+          <div style="font-size:14px;font-weight:500">{{ m['test_name'] or 'Mock Test' }}</div>
+          <div style="font-size:12px;color:var(--text-2)">{{ m['date'][:10] }}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:{% if pct >= 70 %}var(--green){% elif pct >= 50 %}var(--yellow){% else %}var(--red){% endif %}">{{ pct }}%</div>
+          <div style="font-size:11px;color:var(--text-2)">{{ m['marks'] }}/{{ m['max_marks'] }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- STATS STRIP -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:26px;font-weight:700;color:var(--primary-soft)">{{ total_topics }}</div>
+      <div style="font-size:11px;color:var(--text-2);margin-top:2px">Topics Done</div>
+    </div>
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:26px;font-weight:700;color:var(--green)">{{ streak }}</div>
+      <div style="font-size:11px;color:var(--text-2);margin-top:2px">Day Streak</div>
+    </div>
+    <div class="card" style="padding:14px;text-align:center">
+      <div style="font-size:26px;font-weight:700;color:var(--yellow)">{{ air_data.estimated_air }}</div>
+      <div style="font-size:11px;color:var(--text-2);margin-top:2px">Est. AIR</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ctx = document.getElementById('sparkChart').getContext('2d');
+const labels = {{ weekly_labels|tojson }};
+const data = {{ weekly_data|tojson }};
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data,
+      backgroundColor: data.map(v => v >= {{ goal_hours }} ? 'rgba(74,222,128,0.6)' : 'rgba(124,111,247,0.5)'),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, tooltip: {
+      callbacks: { label: ctx => `${ctx.parsed.y}h` }
+    }},
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9896a8', font: { size: 11 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9896a8', font: { size: 11 }, callback: v => v+'h' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+{% endblock %}

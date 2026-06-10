@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Profile | GATE Mission{% endblock %}
+{% block page_title %}Profile & Goals{% endblock %}
+
+{% block content %}
+
+<!-- Profile header -->
+<div class="card" style="padding:20px;margin-bottom:16px;text-align:center">
+  <div style="width:64px;height:64px;background:var(--primary-dim2);border:2px solid var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+    <span class="mi" style="font-size:32px;color:var(--primary-soft);font-variation-settings:'FILL' 1">person</span>
+  </div>
+  <div style="font-size:20px;font-weight:700">{{ user['name'] }}</div>
+  <div style="font-size:13px;color:var(--text-2);margin-top:2px">{{ user['email'] }}</div>
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:10px">
+    <span class="badge badge-primary">GATE 2027</span>
+    <span class="badge badge-yellow">Target AIR &lt; 100</span>
+  </div>
+</div>
+
+<!-- Streak cards -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:11px;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Current Streak</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <span class="mi" style="font-size:22px;color:var(--yellow);font-variation-settings:'FILL' 1">local_fire_department</span>
+      <span style="font-size:32px;font-weight:700;color:var(--yellow)">{{ streak }}</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-2);margin-top:2px">days</div>
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:11px;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em">Longest Streak</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <span class="mi" style="font-size:22px;color:var(--primary-soft);font-variation-settings:'FILL' 1">emoji_events</span>
+      <span style="font-size:32px;font-weight:700;color:var(--primary-soft)">{{ longest }}</span>
+    </div>
+    <div style="font-size:12px;color:var(--text-2);margin-top:2px">days</div>
+  </div>
+</div>
+
+<!-- Stats overview -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--green)">{{ total_hours }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Total Hours</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--primary-soft)">{{ total_topics }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Topics Done</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--blue)">{{ total_mocks }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Mock Tests</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--yellow)">{{ today_hrs }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Today (hrs)</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--green)">{{ weekly_hrs }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Week (hrs)</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--red)">{{ total_revisions }}</div>
+    <div style="font-size:10px;color:var(--text-2);margin-top:2px">Revisions</div>
+  </div>
+</div>
+
+<!-- Goals settings -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--yellow);font-variation-settings:'FILL' 1">target</span>
+    Study Goals
+  </div>
+  <form method="POST" action="/profile/update" style="display:flex;flex-direction:column;gap:12px">
+    <div>
+      <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:6px">Daily Study Hours Target</label>
+      <input type="number" name="daily_goal_hours" class="inp" value="{{ user['daily_goal_hours'] or 5.0 }}" min="0.5" max="20" step="0.5">
+    </div>
+    <div>
+      <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:6px">Weekly Study Hours Target</label>
+      <input type="number" name="weekly_goal_hours" class="inp" value="{{ user['weekly_goal_hours'] or 30.0 }}" min="1" max="100" step="0.5">
+    </div>
+    <div>
+      <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:6px">Daily PYQ Target</label>
+      <input type="number" name="daily_goal_pyqs" class="inp" value="{{ user['daily_goal_pyqs'] or 30 }}" min="1" max="200">
+    </div>
+    <button type="submit" class="btn-primary" style="padding:12px">
+      <span class="mi" style="font-size:16px">save</span>
+      Save Goals
+    </button>
+  </form>
+</div>
+
+<!-- Notifications -->
+{% if notifications %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div class="sec-h">
+      <span class="mi" style="color:var(--blue);font-variation-settings:'FILL' 1">notifications</span>
+      Notifications
+      {% if unread_count > 0 %}
+      <span class="badge badge-blue" style="margin-left:4px">{{ unread_count }}</span>
+      {% endif %}
+    </div>
+    {% if unread_count > 0 %}
+    <form method="POST" action="/profile/notifications/read">
+      <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--primary-soft);font-size:12px;font-weight:500">Mark all read</button>
+    </form>
+    {% endif %}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% for n in notifications %}
+    <div style="padding:10px 12px;border-radius:10px;font-size:13px;border-left:3px solid
+      {% if n['type'] == 'success' %}var(--green){% elif n['type'] == 'warning' %}var(--yellow){% else %}var(--primary){% endif %};
+      background:{% if not n['read'] %}var(--surface-2){% else %}var(--surface){% endif %};
+      {% if not n['read'] %}border:1px solid var(--border){% endif %}">
+      <div style="color:{% if n['read'] %}var(--text-2){% else %}var(--text){% endif %}">{{ n['message'] }}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:3px">{{ n['created_at'][:16] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Quick links -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--text-2)">apps</span>
+    Quick Navigation
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    {% for label, icon, href, color in [
+      ('Dashboard', 'home', '/', 'var(--primary-soft)'),
+      ('Study', 'menu_book', '/study', 'var(--green)'),
+      ('Revision', 'auto_stories', '/revision', 'var(--yellow)'),
+      ('Analytics', 'bar_chart', '/analytics', 'var(--blue)'),
+      ('Mock Tests', 'quiz', '/mock', 'var(--red)'),
+      ('PYQ Tracker', 'library_books', '/pyq', 'var(--green)')
+    ] %}
+    <a href="{{ href }}" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface-2);border-radius:10px;text-decoration:none;transition:all 0.15s" class="card-press">
+      <span class="mi" style="font-size:20px;color:{{ color }}">{{ icon }}</span>
+      <span style="font-size:13px;font-weight:500;color:var(--text)">{{ label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Logout -->
+<a href="/auth/logout" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;background:var(--red-dim);border:1px solid rgba(248,113,113,0.25);color:var(--red);text-decoration:none;font-weight:600;font-size:14px">
+  <span class="mi" style="font-size:18px">logout</span>
+  Sign Out
+</a>
+
+{% endblock %}

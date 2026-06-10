@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f11">
+<title>Register | GATE Mission AIR-100</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+  *, body, html { box-sizing: border-box; }
+  body { background:#0f0f11; color:#e8e6f0; font-family:'Inter',sans-serif; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:16px; -webkit-font-smoothing:antialiased; }
+  .mi { font-family:'Material Symbols Rounded'; font-style:normal; display:inline-flex; align-items:center; }
+  .inp { background:#1a1a1d; border:1px solid #2e2e32; border-radius:12px; color:#e8e6f0; padding:13px 16px; width:100%; outline:none; font-size:15px; font-family:'Inter',sans-serif; transition:border-color 0.2s; }
+  .inp:focus { border-color:#7c6ff7; }
+  .inp::placeholder { color:#6b6977; }
+  .btn { background:#7c6ff7; color:#fff; border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:600; width:100%; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.15s; }
+  .btn:active { transform:scale(0.98); filter:brightness(0.9); }
+  .flash { padding:10px 16px; border-radius:10px; font-size:13px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.25); color:#f87171; display:flex; align-items:center; gap:8px; }
+</style>
+</head>
+<body>
+<div style="width:100%;max-width:420px">
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="width:60px;height:60px;background:rgba(124,111,247,0.15);border:1px solid rgba(124,111,247,0.3);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px">
+      <span class="mi" style="font-size:32px;color:#7c6ff7;font-variation-settings:'FILL' 1">rocket_launch</span>
+    </div>
+    <h1 style="font-size:24px;font-weight:700;margin:0 0 6px">Join the Mission</h1>
+    <p style="color:#9896a8;font-size:14px;margin:0">AIR &lt; 100 starts here</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for cat, msg in messages %}
+    <div class="flash" style="margin-bottom:16px">
+      <span class="mi" style="font-size:16px">{{ 'check_circle' if cat == 'success' else 'error' }}</span>{{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  <div style="background:#1a1a1d;border:1px solid #2e2e32;border-radius:20px;padding:28px">
+    <form method="POST" action="/auth/register">
+      <div style="margin-bottom:16px">
+        <label style="font-size:13px;font-weight:500;color:#9896a8;display:block;margin-bottom:8px">Full Name</label>
+        <input type="text" name="name" class="inp" placeholder="Arjun Sharma" required autocomplete="name">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:13px;font-weight:500;color:#9896a8;display:block;margin-bottom:8px">Email</label>
+        <input type="email" name="email" class="inp" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div style="margin-bottom:24px">
+        <label style="font-size:13px;font-weight:500;color:#9896a8;display:block;margin-bottom:8px">Password</label>
+        <input type="password" name="password" class="inp" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn">Start Mission 🚀</button>
+    </form>
+  </div>
+
+  <p style="text-align:center;margin-top:20px;color:#6b6977;font-size:14px">
+    Already a member? <a href="/auth/login" style="color:#a99ff7;text-decoration:none;font-weight:500">Sign in</a>
+  </p>
+</div>
+</body>
+</html>

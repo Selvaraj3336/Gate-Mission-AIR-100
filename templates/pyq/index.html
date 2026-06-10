@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}PYQ Tracker | GATE Mission{% endblock %}
+{% block page_title %}PYQ Tracker{% endblock %}
+
+{% block content %}
+
+<!-- Overall stats -->
+<div class="card glow-green" style="padding:18px;margin-bottom:16px">
+  <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-2);margin-bottom:10px">Overall PYQ Progress</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+    <div style="text-align:center">
+      <div style="font-size:28px;font-weight:700;color:var(--primary-soft)">{{ total_solved }}</div>
+      <div style="font-size:11px;color:var(--text-2)">Solved</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:28px;font-weight:700;color:var(--green)">{{ total_correct }}</div>
+      <div style="font-size:11px;color:var(--text-2)">Correct</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:28px;font-weight:700;color:{% if overall_acc >= 70 %}var(--green){% elif overall_acc >= 50 %}var(--yellow){% else %}var(--red){% endif %}">{{ overall_acc }}%</div>
+      <div style="font-size:11px;color:var(--text-2)">Accuracy</div>
+    </div>
+  </div>
+  <div class="prog-track" style="height:8px">
+    <div class="prog-fill" style="width:{{ overall_acc }}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--green))"></div>
+  </div>
+</div>
+
+<!-- Add PYQ session -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--primary-soft);font-variation-settings:'FILL' 1">add_circle</span>
+    Log PYQ Session
+  </div>
+  <form method="POST" action="/pyq/update" style="display:flex;flex-direction:column;gap:10px">
+    <select name="subject" class="inp">
+      {% for s in subjects %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      <div>
+        <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">Solved</label>
+        <input type="number" name="solved" class="inp" placeholder="10" min="0" required>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--green);display:block;margin-bottom:4px">Correct</label>
+        <input type="number" name="correct" class="inp" placeholder="7" min="0">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--red);display:block;margin-bottom:4px">Wrong</label>
+        <input type="number" name="wrong" class="inp" placeholder="3" min="0">
+      </div>
+    </div>
+    <button type="submit" class="btn-primary" style="padding:12px">
+      <span class="mi" style="font-size:18px">save</span>
+      Update Progress
+    </button>
+  </form>
+</div>
+
+<!-- Subject-wise breakdown -->
+<div>
+  <div class="sec-h" style="margin-bottom:12px">
+    <span class="mi" style="color:var(--text-2)">library_books</span>
+    Subject-wise Progress
+  </div>
+
+  {% for p in pyq_data %}
+  <div class="card" style="padding:14px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:14px;font-weight:600">{{ p['subject'] }}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        {% if p['solved'] > 0 %}
+        <span class="badge {% if p['accuracy'] >= 70 %}badge-green{% elif p['accuracy'] >= 50 %}badge-yellow{% else %}badge-red{% endif %}">
+          {{ p['accuracy'] }}%
+        </span>
+        {% endif %}
+        {% if p['solved'] > 0 %}
+        <form method="POST" action="/pyq/reset/{{ p['subject']|urlencode }}" style="display:inline" onsubmit="return confirm('Reset {{ p['subject'] }} PYQ data?')">
+          <button type="submit" style="background:none;border:none;cursor:pointer;color:var(--text-3);font-size:12px;padding:2px 6px">✕</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if p['solved'] > 0 %}
+    <div style="display:flex;gap:12px;font-size:12px;color:var(--text-2);margin-bottom:8px">
+      <span><span style="font-weight:600;color:var(--primary-soft)">{{ p['solved'] }}</span> solved</span>
+      <span><span style="font-weight:600;color:var(--green)">{{ p['correct'] }}</span> correct</span>
+      <span><span style="font-weight:600;color:var(--red)">{{ p['wrong'] }}</span> wrong</span>
+    </div>
+    <div class="prog-track" style="height:6px">
+      <div class="prog-fill" style="width:{{ p['accuracy'] }}%;height:100%;background:{% if p['accuracy'] >= 70 %}var(--green){% elif p['accuracy'] >= 50 %}var(--yellow){% else %}var(--red){% endif %}"></div>
+    </div>
+    {% else %}
+    <div style="font-size:12px;color:var(--text-3);font-style:italic">No questions logged yet</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- PYQ chart -->
+{% set has_data = pyq_data|selectattr('solved', 'greaterthan', 0)|list %}
+{% if has_data %}
+<div class="card" style="padding:18px;margin-top:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--yellow)">bar_chart</span>
+    Accuracy by Subject
+  </div>
+  <canvas id="pyqChart" height="200"></canvas>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+{% set has_data = pyq_data|selectattr('solved', 'greaterthan', 0)|list %}
+{% if has_data %}
+<script>
+const solved_subjs = {{ has_data|map(attribute='subject')|list|tojson }};
+const solved_acc   = {{ has_data|map(attribute='accuracy')|list|tojson }};
+const ctx = document.getElementById('pyqChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: solved_subjs.map(s => s.length > 12 ? s.slice(0,12)+'…' : s),
+    datasets: [{
+      data: solved_acc,
+      backgroundColor: solved_acc.map(v => v >= 70 ? 'rgba(74,222,128,0.6)' : v >= 50 ? 'rgba(251,191,36,0.6)' : 'rgba(248,113,113,0.6)'),
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    indexAxis: 'y',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.x}% accuracy` } } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9896a8', font: { size: 10 }, callback: v => v+'%' }, min: 0, max: 100 },
+      y: { grid: { display: false }, ticks: { color: '#9896a8', font: { size: 10 } } }
+    }
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Revision | GATE Mission{% endblock %}
+{% block page_title %}Revision Hub{% endblock %}
+
+{% block content %}
+
+<!-- Stats bar -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--red)">{{ overdue|length }}</div>
+    <div style="font-size:11px;color:var(--text-2)">Overdue</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--yellow)">{{ due_today|length }}</div>
+    <div style="font-size:11px;color:var(--text-2)">Due Today</div>
+  </div>
+  <div class="card" style="padding:14px;text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--green)">{{ rev_pct }}%</div>
+    <div style="font-size:11px;color:var(--text-2)">Completion</div>
+  </div>
+</div>
+
+<!-- Progress bar -->
+<div class="card" style="padding:14px;margin-bottom:16px">
+  <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:8px">
+    <span>Overall Revision Progress</span>
+    <span>{{ done }}/{{ total }} completed</span>
+  </div>
+  <div class="prog-track" style="height:8px">
+    <div class="prog-fill" style="width:{{ rev_pct }}%;height:100%;background:linear-gradient(90deg,var(--primary),var(--green))"></div>
+  </div>
+</div>
+
+<!-- OVERDUE -->
+{% if overdue %}
+<div style="margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:10px">
+    <span class="mi" style="color:var(--red);font-variation-settings:'FILL' 1">error</span>
+    Overdue
+    <span class="badge badge-red" style="margin-left:auto">{{ overdue|length }}</span>
+  </div>
+  {% for rev in overdue %}
+  <div class="card" style="padding:14px;margin-bottom:8px;border-left:3px solid var(--red)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-weight:600;font-size:15px">{{ rev['topic'] }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">{{ rev['subject'] }} · Rev #{{ rev['revision_number'] }}</div>
+        <div style="font-size:11px;color:var(--red);margin-top:2px">{{ rev['due_date'][:10] }}</div>
+      </div>
+    </div>
+    <form method="POST" action="/revision/complete/{{ rev['id'] }}">
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Rate your confidence:</div>
+        <div style="display:flex;gap:6px">
+          {% for i in range(1,6) %}
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="rating" value="{{ i }}" {% if i == 3 %}checked{% endif %} style="display:none" class="star-radio" id="star-{{ rev['id'] }}-{{ i }}">
+            <div class="star-btn" style="text-align:center;padding:8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;color:var(--text-2)">{{ i }}</div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;padding:10px">
+        <span class="mi" style="font-size:16px">check</span>
+        Mark Complete
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- DUE TODAY -->
+{% if due_today %}
+<div style="margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:10px">
+    <span class="mi" style="color:var(--yellow);font-variation-settings:'FILL' 1">schedule</span>
+    Due Today
+    <span class="badge badge-yellow" style="margin-left:auto">{{ due_today|length }}</span>
+  </div>
+  {% for rev in due_today %}
+  <div class="card" style="padding:14px;margin-bottom:8px;border-left:3px solid var(--yellow)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-weight:600;font-size:15px">{{ rev['topic'] }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">{{ rev['subject'] }} · Rev #{{ rev['revision_number'] }}</div>
+      </div>
+    </div>
+    <form method="POST" action="/revision/complete/{{ rev['id'] }}">
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">Rate your confidence:</div>
+        <div style="display:flex;gap:6px">
+          {% for i in range(1,6) %}
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="rating" value="{{ i }}" {% if i == 3 %}checked{% endif %} style="display:none">
+            <div class="star-btn" style="text-align:center;padding:8px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;color:var(--text-2)">{{ i }}</div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;padding:10px">
+        <span class="mi" style="font-size:16px">check</span>
+        Mark Complete
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not overdue and not due_today %}
+<div class="card" style="padding:32px;text-align:center;margin-bottom:16px">
+  <span class="mi" style="font-size:48px;color:var(--green);font-variation-settings:'FILL' 1;display:block;margin-bottom:12px">check_circle</span>
+  <div style="font-size:16px;font-weight:600">All caught up!</div>
+  <div style="font-size:13px;color:var(--text-2);margin-top:4px">No revisions due today. Keep it up!</div>
+</div>
+{% endif %}
+
+<!-- UPCOMING -->
+{% if upcoming %}
+<div style="margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:10px">
+    <span class="mi" style="color:var(--blue)">upcoming</span>
+    Upcoming
+  </div>
+  {% for rev in upcoming %}
+  <div class="card-2" style="padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:14px;font-weight:500">{{ rev['topic'] }}</div>
+      <div style="font-size:12px;color:var(--text-2)">{{ rev['subject'] }}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:12px;font-weight:600;color:var(--blue)">{{ rev['due_date'][:10] }}</div>
+      <div style="font-size:11px;color:var(--text-2)">Rev #{{ rev['revision_number'] }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ADD MANUAL REVISION -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--primary-soft);font-variation-settings:'FILL' 1">add_circle</span>
+    Add Manual Revision
+  </div>
+  <form method="POST" action="/revision/add" style="display:flex;flex-direction:column;gap:10px">
+    <select name="subject" class="inp">
+      {% for s in subjects %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="topic" class="inp" placeholder="Topic name" required>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label style="font-size:13px;color:var(--text-2);white-space:nowrap">Due in</label>
+      <input type="number" name="due_days" class="inp" value="1" min="1" max="365" style="flex:1">
+      <label style="font-size:13px;color:var(--text-2);white-space:nowrap">days</label>
+    </div>
+    <button type="submit" class="btn-primary" style="padding:11px">
+      <span class="mi" style="font-size:16px">add</span>
+      Schedule Revision
+    </button>
+  </form>
+</div>
+
+<!-- TOPIC HEATMAP -->
+{% if heatmap %}
+<div class="card" style="padding:18px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--yellow);font-variation-settings:'FILL' 1">grid_view</span>
+    Confidence Heatmap
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    {% for subject, topics in heatmap.items() %}
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">{{ subject }}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        {% for t in topics %}
+        <div title="{{ t.topic }}" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.05);
+          background:{% if t.confidence >= 4 %}rgba(74,222,128,0.6){% elif t.confidence == 3 %}rgba(251,191,36,0.5){% elif t.confidence == 2 %}rgba(248,113,113,0.4){% else %}rgba(248,113,113,0.7){% endif %}">
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+    <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--text-2)">
+      <span>🟥 Low (1-2)</span>
+      <span>🟨 Medium (3)</span>
+      <span>🟩 High (4-5)</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Highlight star buttons on selection
+document.querySelectorAll('.star-btn').forEach((btn, i) => {
+  btn.parentElement.querySelector('input').addEventListener('change', () => {
+    const group = btn.closest('form').querySelectorAll('.star-btn');
+    const val = parseInt(btn.parentElement.querySelector('input').value);
+    group.forEach((b, j) => {
+      const bVal = parseInt(b.parentElement.querySelector('input').value);
+      if (bVal <= val) {
+        b.style.background = 'rgba(251,191,36,0.2)';
+        b.style.borderColor = 'var(--yellow)';
+        b.style.color = 'var(--yellow)';
+      } else {
+        b.style.background = 'var(--surface-2)';
+        b.style.borderColor = 'var(--border)';
+        b.style.color = 'var(--text-2)';
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

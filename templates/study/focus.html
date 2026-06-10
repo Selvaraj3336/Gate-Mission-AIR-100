@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f11">
+<title>Focus Mode | GATE Mission</title>
+<!-- Fonts loaded non-blocking so they never delay the timer script -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="preload" as="style" onload="this.rel='stylesheet'">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="preload" as="style" onload="this.rel='stylesheet'">
+<noscript>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+</noscript>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:          #0f0f11;
+    --surface:     #1a1a1d;
+    --surface-2:   #222225;
+    --surface-3:   #2a2a2e;
+    --border:      #2e2e32;
+    --border-2:    #3a3a3f;
+    --text:        #e8e6f0;
+    --text-2:      #9896a8;
+    --text-3:      #6b6977;
+    --primary:     #7c6ff7;
+    --primary-s:   #a99ff7;
+    --primary-dim: rgba(124,111,247,0.15);
+    --green:       #4ade80;
+    --yellow:      #fbbf24;
+    --red:         #f87171;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100dvh;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mi {
+    font-family: 'Material Symbols Rounded';
+    font-style: normal;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ambient orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    animation: pulse 8s ease-in-out infinite alternate;
+  }
+  @keyframes pulse {
+    0%   { opacity: 0.05; transform: scale(1); }
+    100% { opacity: 0.13; transform: scale(1.1); }
+  }
+
+  /* Top bar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    z-index: 50;
+  }
+  .topbar-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--primary-s);
+  }
+  .close-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .close-btn:hover { background: rgba(255,255,255,0.1); }
+
+  /* Main layout */
+  .main {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    position: relative; z-index: 1;
+    gap: 0;
+  }
+
+  /* Session info */
+  .session-info { text-align: center; margin-bottom: 24px; }
+  .session-type {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--primary-s); margin-bottom: 4px;
+  }
+  .session-subject { font-size: 24px; font-weight: 700; color: var(--text); }
+  .session-topic   { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+
+  /* Timer ring */
+  .ring-wrap {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px;
+  }
+  .timer-display {
+    font-size: 72px; font-weight: 200;
+    letter-spacing: -3px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    line-height: 1;
+    font-feature-settings: "tnum";
+  }
+  @media (max-width: 380px) { .timer-display { font-size: 56px; } }
+  .focus-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--primary-s); margin-top: 8px;
+  }
+  .ring-inner {
+    position: absolute;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  /* Goal bar */
+  .goal-bar { width: 100%; max-width: 280px; margin-bottom: 28px; }
+  .goal-row  { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+  .goal-val  { color: var(--primary-s); }
+  .prog-track { background: var(--surface-3); border-radius: 100px; overflow: hidden; height: 6px; }
+  .prog-fill  { border-radius: 100px; height: 100%; background: linear-gradient(90deg, var(--primary), var(--green)); transition: width 0.8s ease; }
+
+  /* Controls */
+  .controls { display: flex; align-items: center; gap: 24px; }
+  .ctrl-round {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text-2); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1px; transition: all 0.15s;
+  }
+  .ctrl-round:active { transform: scale(0.92); }
+  .ctrl-finish {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 14px; padding: 14px 28px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(124,111,247,0.4);
+    transition: all 0.15s; font-family: 'Inter', sans-serif;
+  }
+  .ctrl-finish:active { transform: scale(0.96); filter: brightness(0.9); }
+
+  /* Modal */
+  .modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-sheet {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0; padding: 24px 20px 40px;
+    width: 100%; max-width: 600px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border-2); border-radius: 100px;
+    margin: 0 auto 20px;
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub   { font-size: 13px; color: var(--text-2); margin-bottom: 18px; }
+  .inp {
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text) !important;
+    padding: 10px 14px !important;
+    width: 100%; font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none; resize: none;
+    transition: border-color 0.2s;
+  }
+  .inp:focus { border-color: var(--primary) !important; }
+  .check-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; background: var(--surface-2);
+    border-radius: 12px; cursor: pointer; margin-bottom: 14px;
+  }
+  .conf-section {
+    display: none; padding: 14px;
+    background: var(--surface-2); border-radius: 12px; margin-bottom: 14px;
+  }
+  .conf-grid { display: flex; gap: 8px; margin-top: 8px; }
+  .star-btn {
+    flex: 1; height: 40px; border-radius: 8px;
+    background: var(--surface-3); border: 1px solid var(--border);
+    color: var(--text-2); font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif;
+  }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+  .btn-cancel {
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text-2); border-radius: 10px; padding: 12px;
+    font-size: 14px; cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-save {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+  }
+  .btn-save:active, .btn-cancel:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<!-- Ambient orbs -->
+<div class="orb" style="top:-20%;left:-10%;width:60%;height:60%;background:var(--primary);animation-delay:0s"></div>
+<div class="orb" style="bottom:-10%;right:-5%;width:50%;height:50%;background:rgba(74,222,128,0.3);animation-delay:-3s"></div>
+
+<!-- Top bar -->
+<div class="topbar">
+  <span class="topbar-label">GATE MISSION · AIR &lt; 100</span>
+  <button class="close-btn" onclick="showModal()">
+    <span class="mi" style="font-size:20px">close</span>
+  </button>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Session info -->
+  <div class="session-info">
+    <div class="session-type">{{ study_session['session_type'] }}</div>
+    <div class="session-subject">{{ study_session['subject'] }}</div>
+    <div class="session-topic">{{ study_session['topic'] or 'General Study' }}</div>
+  </div>
+
+  <!-- Timer ring -->
+  <div class="ring-wrap">
+    <svg width="240" height="240" viewBox="0 0 240 240" style="display:block">
+      <circle cx="120" cy="120" r="108" fill="none" stroke="var(--surface-3)" stroke-width="3"/>
+      <circle id="timerRing" cx="120" cy="120" r="108" fill="none"
+        stroke="var(--primary)" stroke-width="4" stroke-linecap="round"
+        stroke-dasharray="678.58" stroke-dashoffset="678.58"
+        transform="rotate(-90 120 120)"
+        style="transition:stroke-dashoffset 0.9s linear;filter:drop-shadow(0 0 10px rgba(124,111,247,0.4))"/>
+    </svg>
+    <div class="ring-inner">
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="focus-label" id="focusLabel">Deep Focus</div>
+    </div>
+  </div>
+
+  <!-- Daily goal bar -->
+  <div class="goal-bar">
+    <div class="goal-row">
+      <span>Daily Goal</span>
+      <span class="goal-val">{{ today_hours }}h / {{ goal_hours }}h</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" style="width:{{ [[today_hours / goal_hours * 100, 100]|min, 0]|max|round|int }}%"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="ctrl-round" id="pauseBtn" onclick="togglePause()">
+      <span class="mi" id="pauseIcon" style="font-size:26px">pause</span>
+    </button>
+
+    <button class="ctrl-finish" onclick="showModal()">
+      <span class="mi" style="font-size:20px">done_all</span>
+      Finish
+    </button>
+
+    <button class="ctrl-round" onclick="addTime(5)">
+      <span class="mi" style="font-size:20px">add</span>
+      <span style="font-size:9px;font-weight:600">5m</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- End session modal -->
+<div class="modal-backdrop" id="endModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">End Session</div>
+    <p class="modal-sub">Time: <span id="sessionTime" style="color:var(--primary-s);font-weight:600">00:00</span></p>
+
+    <form method="POST" action="/study/end/{{ study_session['id'] }}">
+      <textarea name="notes" class="inp" placeholder="Quick notes (optional)..." rows="2" style="margin-bottom:14px"></textarea>
+
+      {% if study_session['topic'] %}
+      <label class="check-row">
+        <input type="checkbox" name="mark_topic_complete" id="markComplete"
+          style="width:18px;height:18px;accent-color:var(--primary);flex-shrink:0">
+        <div>
+          <div style="font-size:14px;font-weight:500">Mark topic complete</div>
+          <div style="font-size:12px;color:var(--text-2)">Schedules revision on Day 3, 7 &amp; 30</div>
+        </div>
+      </label>
+
+      <div class="conf-section" id="confSection">
+        <div style="font-size:13px;font-weight:500;color:var(--text-2)">Confidence level (1 = hard, 5 = easy)</div>
+        <div class="conf-grid">
+          {% for i in range(1,6) %}
+          <button type="button" class="star-btn" onclick="setConf({{ i }})">{{ i }}</button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="confidence" id="confInput" value="3">
+      </div>
+      {% endif %}
+
+      <div class="btn-row">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save &amp; Exit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── Bulletproof stopwatch — starts the instant DOM is ready ─────────────────
+(function() {
+  var t0          = Date.now();
+  var paused      = false;
+  var pauseStart  = 0;
+  var pausedTotal = 0;
+  var bonus       = 0;
+  var intervalId  = null;
+
+  function elapsed() {
+    var ms = Date.now() - t0 - pausedTotal + (bonus * 1000);
+    return ms < 0 ? 0 : Math.floor(ms / 1000);
+  }
+
+  function fmt(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function tick() {
+    if (paused) return;
+    var sec = elapsed();
+    var f = fmt(sec);
+    var d = document.getElementById('timerDisplay');
+    var st = document.getElementById('sessionTime');
+    var ring = document.getElementById('timerRing');
+    if (d)    d.textContent  = f;
+    if (st)   st.textContent = f;
+    if (ring) {
+      var pct = sec / 3600;
+      if (pct > 1) pct = 1;
+      ring.style.strokeDashoffset = (678.58 * (1 - pct)).toString();
+    }
+  }
+
+  // expose globals so onclick="" attributes work
+  window.togglePause = function() {
+    paused = !paused;
+    var icon  = document.getElementById('pauseIcon');
+    var label = document.getElementById('focusLabel');
+    if (paused) {
+      pauseStart = Date.now();
+      if (icon)  icon.textContent  = 'play_arrow';
+      if (label) label.textContent = 'Paused';
+    } else {
+      pausedTotal += Date.now() - pauseStart;
+      if (icon)  icon.textContent  = 'pause';
+      if (label) label.textContent = 'Deep Focus';
+    }
+  };
+
+  window.addTime = function(min) { bonus += min * 60; };
+
+  window.showModal = function() {
+    var m = document.getElementById('endModal');
+    if (m) m.style.display = 'flex';
+  };
+
+  window.closeModal = function() {
+    var m = document.getElementById('endModal');
+    if (m) m.style.display = 'none';
+  };
+
+  window.setConf = function(val) {
+    var inp = document.getElementById('confInput');
+    if (inp) inp.value = val;
+    var btns = document.querySelectorAll('.star-btn');
+    for (var i = 0; i < btns.length; i++) {
+      if (i < val) {
+        btns[i].style.background  = 'rgba(251,191,36,0.2)';
+        btns[i].style.borderColor = '#fbbf24';
+        btns[i].style.color       = '#fbbf24';
+      } else {
+        btns[i].style.background  = 'var(--surface-3)';
+        btns[i].style.borderColor = 'var(--border)';
+        btns[i].style.color       = 'var(--text-2)';
+      }
+    }
+  };
+
+  function init() {
+    // mark complete toggle
+    var markEl = document.getElementById('markComplete');
+    if (markEl) {
+      markEl.addEventListener('change', function() {
+        var cs = document.getElementById('confSection');
+        if (cs) cs.style.display = this.checked ? 'block' : 'none';
+      });
+    }
+    window.setConf(3);
+
+    // START the clock
+    tick();
+    intervalId = setInterval(tick, 1000);
+
+    // ping server every 60s
+    setInterval(function() {
+      fetch('/study/api/ping/{{ study_session["id"] }}', {method:'POST'}).catch(function(){});
+    }, 60000);
+  }
+
+  // Run as soon as DOM is available — works even if fonts haven't loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init(); // DOM already ready
+  }
+})();
+</script>
+</body>
+</html>

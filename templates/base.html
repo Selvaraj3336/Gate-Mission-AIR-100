@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#131315">
+<title>{% block title %}GATE Mission AIR-100{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #1a1a1d;
+    --surface-2: #222225;
+    --surface-3: #2a2a2e;
+    --border: #2e2e32;
+    --border-2: #3a3a3f;
+    --text: #e8e6f0;
+    --text-2: #9896a8;
+    --text-3: #6b6977;
+    --primary: #7c6ff7;
+    --primary-soft: #a99ff7;
+    --primary-dim: rgba(124,111,247,0.12);
+    --primary-dim2: rgba(124,111,247,0.2);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251,191,36,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100dvh; }
+  body { -webkit-font-smoothing: antialiased; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 10px; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+  .card-2 { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+  .card-press { transition: transform 0.15s, border-color 0.15s; }
+  .card-press:active { transform: scale(0.97); border-color: var(--primary); }
+
+  /* Glow */
+  .glow { box-shadow: 0 0 24px rgba(124,111,247,0.15); }
+  .glow-green { box-shadow: 0 0 20px rgba(74,222,128,0.1); }
+
+  /* Progress bars */
+  .prog-track { background: var(--surface-3); border-radius: 100px; overflow: hidden; }
+  .prog-fill { border-radius: 100px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Inputs — explicit overrides to defeat Tailwind forms plugin white bg */
+  .inp,
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="date"], input[type="search"],
+  textarea, select {
+    background: var(--surface-2) !important;
+    background-color: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    color: var(--text) !important;
+    padding: 10px 14px !important;
+    width: 100%;
+    transition: border-color 0.2s;
+    outline: none !important;
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .inp:focus,
+  input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
+  input[type="number"]:focus, input[type="date"]:focus, input[type="search"]:focus,
+  textarea:focus, select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 2px rgba(124,111,247,0.12) !important;
+    outline: none !important;
+  }
+  .inp::placeholder,
+  input::placeholder, textarea::placeholder { color: var(--text-3) !important; }
+  select.inp, select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239896a8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 16px !important;
+    padding-right: 36px !important;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; filter: invert(1); }
+  input[type="checkbox"] { width: 18px !important; height: 18px !important; accent-color: var(--primary); padding: 0 !important; }
+
+  /* Buttons */
+  .btn-primary { background: var(--primary); color: #fff; border-radius: 12px; padding: 13px 24px; font-weight: 600; font-size: 15px; border: none; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-primary:active { transform: scale(0.97); filter: brightness(0.9); }
+  .btn-ghost { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+  .btn-ghost:active { transform: scale(0.97); }
+  .btn-danger { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+
+  /* Badge */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
+  .badge-primary { background: var(--primary-dim); color: var(--primary-soft); border: 1px solid var(--primary-dim2); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(96,165,250,0.2); }
+
+  /* Select */
+  select.inp { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239896a8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
+
+  /* Material icons */
+  .mi { font-family: 'Material Symbols Rounded'; font-style: normal; user-select: none; display: inline-flex; align-items: center; justify-content: center; }
+
+  /* Nav */
+  .nav-link { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-3); transition: color 0.2s; padding: 4px 8px; border-radius: 12px; min-width: 52px; }
+  .nav-link .mi { font-size: 22px; transition: font-variation-settings 0.2s; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+  .nav-link span:last-child { font-size: 10px; font-weight: 500; }
+  .nav-link.active { color: var(--primary-soft); }
+  .nav-link.active .mi { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* Section header */
+  .sec-h { font-size: 18px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .sec-sub { font-size: 13px; color: var(--text-2); }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .fade-up { animation: fadeUp 0.3s ease forwards; }
+
+  /* Flash */
+  .flash { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 999; padding: 10px 18px; border-radius: 12px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(12px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); white-space: nowrap; max-width: 90vw; animation: flashIn 0.3s ease; }
+  @keyframes flashIn { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+  .flash-success { background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3); color: var(--green); }
+  .flash-error { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); color: var(--red); }
+
+  /* Chip selector */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { cursor: pointer; padding: 7px 14px; border-radius: 100px; font-size: 13px; font-weight: 500; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); transition: all 0.15s; }
+  .chip:has(input:checked) { background: var(--primary-dim2); border-color: var(--primary); color: var(--primary-soft); }
+  .chip input { display: none; }
+
+  /* Confidence stars */
+  .stars { display: flex; gap: 4px; }
+  .star { font-size: 20px; cursor: pointer; color: var(--text-3); transition: color 0.15s; }
+  .star.active { color: var(--yellow); }
+
+  /* Sticky header */
+  .sticky-header { position: sticky; top: 0; z-index: 50; background: rgba(15,15,17,0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
+
+  /* Bottom nav safe area */
+  .bottom-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+</style>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {} }
+  }
+</script>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  {% for cat, msg in messages %}
+  <div class="flash flash-{{ cat }}" id="flash-msg" onclick="this.remove()">
+    <span class="mi" style="font-size:18px">{{ 'check_circle' if cat == 'success' else 'error' }}</span>
+    {{ msg }}
+  </div>
+  <script>setTimeout(()=>document.getElementById('flash-msg')?.remove(), 4000)</script>
+  {% endfor %}
+{% endif %}
+{% endwith %}
+
+{% block header %}
+<header class="sticky-header">
+  <div class="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
+    <div class="flex items-center gap-2">
+      <a href="/" style="color:var(--primary)" class="flex items-center">
+        <span class="mi" style="font-size:26px;font-variation-settings:'FILL' 1,'wght' 500">bolt</span>
+      </a>
+      <span style="font-size:16px;font-weight:700;color:var(--text)">{% block page_title %}GATE Mission{% endblock %}</span>
+    </div>
+    <div class="flex items-center gap-3">
+      {% if session.get('user_id') %}
+      <a href="/revision" style="color:var(--text-2)">
+        <span class="mi" style="font-size:22px">history_edu</span>
+      </a>
+      <a href="/profile" style="color:var(--text-2)">
+        <span class="mi" style="font-size:22px">account_circle</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+<main class="max-w-2xl mx-auto px-4 py-5 pb-28 {% block main_class %}{% endblock %}">
+  {% block content %}{% endblock %}
+</main>
+
+{% if session.get('user_id') %}
+{% block nav %}
+<nav class="fixed bottom-0 left-0 right-0 z-50 bottom-nav" style="background:rgba(15,15,17,0.92);backdrop-filter:blur(20px);border-top:1px solid var(--border)">
+  <div class="flex justify-around items-center max-w-2xl mx-auto px-2 pt-2 pb-1">
+    <a href="/" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+      <span class="mi">home</span>
+      <span>Home</span>
+    </a>
+    <a href="/study" class="nav-link {% if 'study' in (request.endpoint or '') %}active{% endif %}">
+      <span class="mi">menu_book</span>
+      <span>Study</span>
+    </a>
+    <!-- Revision FAB -->
+    <a href="/revision" class="flex flex-col items-center -mt-5">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-lg" style="background:var(--primary);box-shadow:0 4px 20px rgba(124,111,247,0.4)">
+        <span class="mi" style="font-size:26px;color:#fff;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">auto_stories</span>
+      </div>
+      <span style="font-size:10px;font-weight:600;color:var(--primary-soft);margin-top:2px">Revise</span>
+    </a>
+    <a href="/analytics" class="nav-link {% if 'analytics' in (request.endpoint or '') %}active{% endif %}">
+      <span class="mi">bar_chart</span>
+      <span>Stats</span>
+    </a>
+    <a href="/mock" class="nav-link {% if 'mock' in (request.endpoint or '') %}active{% endif %}">
+      <span class="mi">quiz</span>
+      <span>Mock</span>
+    </a>
+  </div>
+</nav>
+{% endblock %}
+{% endif %}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

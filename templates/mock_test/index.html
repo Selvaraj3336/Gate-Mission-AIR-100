@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Mock Tests | GATE Mission{% endblock %}
+{% block page_title %}Mock Test Tracker{% endblock %}
+
+{% block content %}
+
+<!-- Summary Cards -->
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px">
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:30px;font-weight:300;color:var(--primary-soft)">{{ avg_score }}%</div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:2px">Average Score</div>
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:30px;font-weight:300;color:var(--green)">{{ best_pct }}%</div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:2px">Best Score</div>
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:30px;font-weight:300;color:var(--yellow)">{{ latest_pct }}%</div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:2px">Latest Score</div>
+    {% if trend == 'up' %}<div style="font-size:11px;color:var(--green);margin-top:2px">▲ Improving</div>
+    {% elif trend == 'down' %}<div style="font-size:11px;color:var(--red);margin-top:2px">▼ Declining</div>{% endif %}
+  </div>
+  <div class="card" style="padding:16px;text-align:center">
+    <div style="font-size:30px;font-weight:300;color:var(--blue)">{{ mocks|length }}</div>
+    <div style="font-size:11px;color:var(--text-2);margin-top:2px">Tests Taken</div>
+  </div>
+</div>
+
+<!-- Score trend chart -->
+{% if mocks %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--blue)">trending_up</span>
+    Score Trend
+  </div>
+  <canvas id="trendChart" height="150"></canvas>
+</div>
+{% endif %}
+
+<!-- Error analysis -->
+{% if mocks %}
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--red);font-variation-settings:'FILL' 1">bug_report</span>
+    Cumulative Error Analysis
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    {% set total_errors = total_concept + total_silly + total_time + total_guess %}
+    {% if total_errors > 0 %}
+    {% for label, val, color in [
+      ('Concept Errors', total_concept, 'var(--red)'),
+      ('Silly Mistakes', total_silly, 'var(--yellow)'),
+      ('Time Errors', total_time, 'var(--blue)'),
+      ('Guess Errors', total_guess, 'var(--text-2)')
+    ] %}
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+        <span style="color:var(--text-2)">{{ label }}</span>
+        <span style="font-weight:600;color:{{ color }}">{{ val }}</span>
+      </div>
+      <div class="prog-track" style="height:6px">
+        <div class="prog-fill" style="width:{{ (val / total_errors * 100)|round|int }}%;height:100%;background:{{ color }}"></div>
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="color:var(--text-2);font-size:13px;text-align:center;padding:10px">No error data yet. Add tests to see analysis.</div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Add new mock test -->
+<div class="card" style="padding:18px;margin-bottom:16px">
+  <div class="sec-h" style="margin-bottom:14px">
+    <span class="mi" style="color:var(--primary-soft);font-variation-settings:'FILL' 1">add_circle</span>
+    Add Mock Test
+  </div>
+  <form method="POST" action="/mock/add" style="display:flex;flex-direction:column;gap:10px">
+    <input type="text" name="test_name" class="inp" placeholder="Test name (e.g. GATE 2024 Mock 1)" value="Mock Test">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div>
+        <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">Marks Obtained</label>
+        <input type="number" name="marks" class="inp" placeholder="65" step="0.5" min="0" required>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">Max Marks</label>
+        <input type="number" name="max_marks" class="inp" placeholder="100" value="100" min="1">
+      </div>
+    </div>
+    <div>
+      <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">Accuracy % (optional)</label>
+      <input type="number" name="accuracy" class="inp" placeholder="e.g. 72.5" step="0.1" min="0" max="100">
+    </div>
+
+    <!-- Error breakdown -->
+    <div style="background:var(--surface-2);border-radius:12px;padding:14px">
+      <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:10px">Error Breakdown</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label style="font-size:12px;color:var(--red);display:block;margin-bottom:4px">Concept Errors</label>
+          <input type="number" name="concept_errors" class="inp" placeholder="0" value="0" min="0">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--yellow);display:block;margin-bottom:4px">Silly Mistakes</label>
+          <input type="number" name="silly_mistakes" class="inp" placeholder="0" value="0" min="0">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--blue);display:block;margin-bottom:4px">Time Errors</label>
+          <input type="number" name="time_errors" class="inp" placeholder="0" value="0" min="0">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-2);display:block;margin-bottom:4px">Guess Errors</label>
+          <input type="number" name="guess_errors" class="inp" placeholder="0" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <textarea name="notes" class="inp" placeholder="Notes / Observations..." rows="2" style="resize:none"></textarea>
+    <button type="submit" class="btn-primary" style="padding:12px">
+      <span class="mi" style="font-size:18px">save</span>
+      Save Test Result
+    </button>
+  </form>
+</div>
+
+<!-- Test history -->
+{% if mocks %}
+<div>
+  <div class="sec-h" style="margin-bottom:12px">
+    <span class="mi" style="color:var(--text-2)">history</span>
+    Test History
+  </div>
+  {% for m in mocks %}
+  {% set pct = (m['marks'] / (m['max_marks'] or 100) * 100)|round(1) %}
+  <div class="card" style="padding:14px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-size:15px;font-weight:600">{{ m['test_name'] or 'Mock Test' }}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">{{ m['date'][:10] }}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:22px;font-weight:700;color:{% if pct >= 70 %}var(--green){% elif pct >= 50 %}var(--yellow){% else %}var(--red){% endif %}">{{ pct }}%</div>
+        <div style="font-size:12px;color:var(--text-2)">{{ m['marks'] }}/{{ m['max_marks'] }}</div>
+      </div>
+    </div>
+    <!-- Error pills -->
+    {% set has_errors = (m['concept_errors'] or 0) + (m['silly_mistakes'] or 0) + (m['time_errors'] or 0) + (m['guess_errors'] or 0) > 0 %}
+    {% if has_errors %}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      {% if m['concept_errors'] %}<span class="badge badge-red">{{ m['concept_errors'] }} concept</span>{% endif %}
+      {% if m['silly_mistakes'] %}<span class="badge badge-yellow">{{ m['silly_mistakes'] }} silly</span>{% endif %}
+      {% if m['time_errors'] %}<span class="badge badge-blue">{{ m['time_errors'] }} time</span>{% endif %}
+      {% if m['guess_errors'] %}<span class="badge" style="background:var(--surface-3);color:var(--text-2)">{{ m['guess_errors'] }} guess</span>{% endif %}
+    </div>
+    {% endif %}
+    {% if m['notes'] %}
+    <div style="font-size:12px;color:var(--text-2);font-style:italic">{{ m['notes'] }}</div>
+    {% endif %}
+    <form method="POST" action="/mock/delete/{{ m['id'] }}" style="margin-top:8px" onsubmit="return confirm('Delete this test result?')">
+      <button type="submit" class="btn-danger" style="font-size:11px;padding:5px 10px">
+        <span class="mi" style="font-size:13px">delete</span> Delete
+      </button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="padding:32px;text-align:center">
+  <span class="mi" style="font-size:48px;color:var(--text-3);display:block;margin-bottom:12px">quiz</span>
+  <div style="font-size:15px;font-weight:600;color:var(--text-2)">No mock tests yet</div>
+  <div style="font-size:13px;color:var(--text-3);margin-top:4px">Add your first test result above</div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+{% if chart_labels %}
+const ctx = document.getElementById('trendChart')?.getContext('2d');
+if (ctx) {
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|tojson }},
+      datasets: [{
+        data: {{ chart_scores|tojson }},
+        borderColor: '#60a5fa',
+        backgroundColor: 'rgba(96,165,250,0.1)',
+        pointBackgroundColor: {{ chart_scores|tojson }}.map(v =>
+          v >= 70 ? '#4ade80' : v >= 50 ? '#fbbf24' : '#f87171'),
+        pointRadius: 5,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => `${c.parsed.y}%` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9896a8', font: { size: 10 } } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#9896a8', font: { size: 10 }, callback: v => v+'%' },
+          min: 0, max: 100
+        }
+      }
+    }
+  });
+}
+{% endif %}
+</script>
+{% endblock %}
