@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, current_app, g
 from auth_utils import login_required
-from datetime import datetime
+from datetime import datetime, timedelta
 from db import GATE_SUBJECTS, SESSION_TYPES, schedule_revisions, add_notification, get_today_hours
 
 study_bp = Blueprint('study', __name__)
@@ -110,6 +110,101 @@ def end(session_id):
 
     session.pop('active_session_id', None)
     return redirect(url_for('dashboard.index'))
+
+
+@study_bp.route('/manual', methods=['GET', 'POST'])
+@login_required
+def manual():
+    db = current_app.get_db()
+    uid = g.current_user['id']
+
+    if request.method == 'POST':
+        subject = request.form.get('subject', '')
+        topic = request.form.get('topic', '').strip()
+        stype = request.form.get('session_type', 'Learning')
+        date_str = request.form.get('date', '')
+        hours = request.form.get('hours', '0').strip()
+        minutes = request.form.get('minutes', '0').strip()
+        notes = request.form.get('notes', '').strip()
+        mark_complete = request.form.get('mark_topic_complete') == 'on'
+        confidence = int(request.form.get('confidence', 3))
+
+        errors = []
+        if not subject:
+            errors.append('Please select a subject.')
+        if not date_str:
+            errors.append('Please pick a date.')
+
+        try:
+            h = int(hours) if hours else 0
+        except ValueError:
+            h = 0
+        try:
+            m = int(minutes) if minutes else 0
+        except ValueError:
+            m = 0
+        duration = h * 60 + m
+
+        if duration <= 0:
+            errors.append('Enter a study duration greater than 0.')
+
+        try:
+            entry_date = datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            entry_date = None
+            errors.append('Invalid date.')
+
+        if errors:
+            return render_template('study/manual.html',
+                subjects=GATE_SUBJECTS,
+                session_types=SESSION_TYPES,
+                user=g.current_user,
+                errors=errors,
+                form=request.form,
+            )
+
+        # Anchor the stored timestamps to the chosen date so streaks/analytics
+        # (which group by date(started_at)) line up correctly, but keep a
+        # plausible end time = start + duration.
+        started_at = entry_date.replace(hour=20, minute=0, second=0)
+        ended_at = started_at + timedelta(minutes=duration)
+
+        cur = db.execute(
+            "INSERT INTO study_sessions (user_id, subject, topic, session_type, started_at, ended_at, duration_minutes, notes) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (uid, subject, topic, stype,
+             started_at.strftime('%Y-%m-%d %H:%M:%S'),
+             ended_at.strftime('%Y-%m-%d %H:%M:%S'),
+             duration, notes)
+        )
+        db.commit()
+
+        if mark_complete and topic:
+            tcur = db.execute(
+                "INSERT INTO completed_topics (user_id, subject, topic, confidence) VALUES (?,?,?,?)",
+                (uid, subject, topic, confidence)
+            )
+            db.commit()
+            topic_id = tcur.lastrowid
+            schedule_revisions(db, uid, topic_id, subject, topic)
+            add_notification(db, uid,
+                f"Topic '{topic}' marked complete! Revisions scheduled for Day 3, 7 & 30.", 'success')
+
+        return redirect(url_for('study.manual', saved=1))
+
+    recent = db.execute(
+        "SELECT * FROM study_sessions WHERE user_id=? AND duration_minutes IS NOT NULL ORDER BY started_at DESC LIMIT 10",
+        (uid,)
+    ).fetchall()
+
+    return render_template('study/manual.html',
+        subjects=GATE_SUBJECTS,
+        session_types=SESSION_TYPES,
+        user=g.current_user,
+        recent=recent,
+        saved=request.args.get('saved'),
+        today=datetime.utcnow().strftime('%Y-%m-%d'),
+    )
 
 
 @study_bp.route('/api/ping/<int:session_id>', methods=['POST'])

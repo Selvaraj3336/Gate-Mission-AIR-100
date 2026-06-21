@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Manual Entry | GATE Mission{% endblock %}
+{% block page_title %}Manual Entry{% endblock %}
+
+{% block content %}
+<style>
+  .check-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px; background: var(--surface-2);
+    border-radius: 12px; cursor: pointer; margin-bottom: 14px;
+  }
+  .conf-section {
+    display: none; padding: 14px;
+    background: var(--surface-2); border-radius: 12px; margin-bottom: 4px;
+  }
+  .conf-grid { display: flex; gap: 8px; margin-top: 8px; }
+  .star-btn {
+    flex: 1; height: 40px; border-radius: 8px;
+    background: var(--surface-3); border: 1px solid var(--border);
+    color: var(--text-2); font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif;
+  }
+  .star-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .time-field label { font-size: 12px; color: var(--text-2); display: block; margin-bottom: 6px; }
+</style>
+
+{% if saved %}
+<div class="flash-success" style="padding:12px 14px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:14px">
+  ✓ Study entry saved.
+</div>
+{% endif %}
+
+{% if errors %}
+<div style="padding:12px 14px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:14px;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);color:var(--red)">
+  {% for e in errors %}<div>{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<form method="POST" action="/study/manual" id="manualForm">
+
+  <!-- DATE -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--primary-soft);font-size:20px;font-variation-settings:'FILL' 1">calendar_today</span>
+      Date
+    </div>
+    <input type="date" name="date" class="inp" max="{{ today }}"
+      value="{{ form.date if form else today }}" required>
+  </div>
+
+  <!-- SUBJECT -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--primary-soft);font-size:20px;font-variation-settings:'FILL' 1">school</span>
+      Subject
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      {% for subj in subjects %}
+      <label class="chip" style="border-radius:10px;padding:10px 12px;font-size:13px;text-align:center">
+        <input type="radio" name="subject" value="{{ subj }}"
+          {% if (form and form.subject == subj) or (not form and loop.first) %}checked{% endif %}>
+        {{ subj }}
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- TOPIC -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:12px">
+      <span class="mi" style="color:var(--yellow);font-size:20px">topic</span>
+      Topic <span style="font-size:13px;font-weight:400;color:var(--text-2)">(optional)</span>
+    </div>
+    <input type="text" name="topic" id="topicInput" class="inp"
+      placeholder="e.g. Pipelining, Dijkstra's Algorithm..."
+      value="{{ form.topic if form else '' }}">
+  </div>
+
+  <!-- SESSION TYPE -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--green);font-size:20px">category</span>
+      Session Type
+    </div>
+    <div class="chip-group">
+      {% for stype in session_types %}
+      <label class="chip">
+        <input type="radio" name="session_type" value="{{ stype }}"
+          {% if (form and form.session_type == stype) or (not form and loop.first) %}checked{% endif %}>
+        {{ stype }}
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- DURATION -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:14px">
+      <span class="mi" style="color:var(--primary-soft);font-size:20px">schedule</span>
+      Time Studied
+    </div>
+    <div class="time-row">
+      <div class="time-field">
+        <label>Hours</label>
+        <input type="number" name="hours" class="inp" min="0" max="23" placeholder="0"
+          value="{{ form.hours if form else '' }}">
+      </div>
+      <div class="time-field">
+        <label>Minutes</label>
+        <input type="number" name="minutes" class="inp" min="0" max="59" placeholder="0"
+          value="{{ form.minutes if form else '' }}">
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="card" style="padding:18px;margin-bottom:12px">
+    <div class="sec-h" style="margin-bottom:12px">
+      <span class="mi" style="color:var(--text-2);font-size:20px">edit_note</span>
+      Notes <span style="font-size:13px;font-weight:400;color:var(--text-2)">(optional)</span>
+    </div>
+    <textarea name="notes" class="inp" rows="2" placeholder="Anything worth remembering...">{{ form.notes if form else '' }}</textarea>
+  </div>
+
+  <!-- MARK COMPLETE + REVISION -->
+  <div class="card" style="padding:18px;margin-bottom:20px">
+    <label class="check-row" style="margin-bottom:0" id="checkRow">
+      <input type="checkbox" name="mark_topic_complete" id="markComplete"
+        style="width:18px;height:18px;accent-color:var(--primary);flex-shrink:0"
+        {% if form and form.mark_topic_complete == 'on' %}checked{% endif %}>
+      <div>
+        <div style="font-size:14px;font-weight:500">Mark topic complete &amp; assign for revision</div>
+        <div style="font-size:12px;color:var(--text-2)">Schedules spaced revision on Day 3, 7 &amp; 30</div>
+      </div>
+    </label>
+
+    <div class="conf-section" id="confSection" style="margin-top:14px;margin-bottom:0">
+      <div style="font-size:13px;font-weight:500;color:var(--text-2)">Confidence level (1 = hard, 5 = easy)</div>
+      <div class="conf-grid">
+        {% for i in range(1,6) %}
+        <button type="button" class="star-btn" data-val="{{ i }}" onclick="setConf({{ i }})">{{ i }}</button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="confidence" id="confInput" value="{{ form.confidence if form else 3 }}">
+    </div>
+  </div>
+
+  <button type="submit" class="btn-primary" style="width:100%;font-size:16px;padding:15px">
+    <span class="mi" style="font-size:22px;font-variation-settings:'FILL' 1">save</span>
+    Save Study Entry
+  </button>
+</form>
+
+<!-- RECENT MANUAL/LOGGED ENTRIES -->
+{% if recent %}
+<div style="margin-top:24px;margin-bottom:24px">
+  <div class="sec-h" style="margin-bottom:12px">
+    <span class="mi" style="color:var(--text-2);font-size:18px">history</span>
+    Recently Logged
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% for s in recent %}
+    <div class="card-2" style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:500">{{ s['subject'] }}{% if s['topic'] %} <span style="color:var(--text-2)">· {{ s['topic'] }}</span>{% endif %}</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">
+          <span class="badge badge-primary" style="font-size:10px;padding:2px 7px">{{ s['session_type'] }}</span>
+          <span style="margin-left:6px">{{ s['started_at'][:10] }}</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:15px;font-weight:600;color:var(--green)">{{ s['duration_minutes'] }}m</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<script>
+  var checkRow = document.getElementById('checkRow');
+  var markComplete = document.getElementById('markComplete');
+  var confSection = document.getElementById('confSection');
+  var topicInput = document.getElementById('topicInput');
+
+  function syncConfVisibility() {
+    confSection.style.display = markComplete.checked ? 'block' : 'none';
+  }
+  markComplete.addEventListener('change', syncConfVisibility);
+  syncConfVisibility();
+
+  // Require a topic before allowing "mark complete" to be checked,
+  // since revisions are scheduled per-topic.
+  checkRow.addEventListener('click', function(e) {
+    if (!markComplete.checked && !topicInput.value.trim() && e.target !== markComplete) {
+      // about to check it via label click — let native behavior continue,
+      // but warn if topic is empty
+    }
+  });
+  document.getElementById('manualForm').addEventListener('submit', function(e) {
+    if (markComplete.checked && !topicInput.value.trim()) {
+      e.preventDefault();
+      alert('Please enter a topic name before marking it complete for revision.');
+      topicInput.focus();
+    }
+  });
+
+  function setConf(val) {
+    document.getElementById('confInput').value = val;
+    var btns = document.querySelectorAll('.star-btn');
+    btns.forEach(function(b) {
+      b.classList.toggle('active', parseInt(b.dataset.val) === val);
+    });
+  }
+  setConf(parseInt(document.getElementById('confInput').value) || 3);
+</script>
+
+{% endblock %}
